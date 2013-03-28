@@ -10,18 +10,18 @@
 package heartbeat
 
 import (
+	"log"
 	"net"
-	"time"
-	"fmt"
 	"sync"
+	"time"
 )
 
-struct Client type {
-	name	string
-	conn	net.Conn
-	ch	chan string
-	mu	sync.Mutex
-	timeout	time.Duration
+type Client struct {
+	name    string
+	conn    net.Conn
+	ch      chan string
+	mu      sync.Mutex
+	timeout time.Duration
 }
 
 // change the timeout of the function
@@ -37,8 +37,8 @@ func (c *Client) Beat() {
 	out := time.Tick(c.timeout)
 	for {
 		select {
-			case <-out:
-				c.conn.Write([]byte("ok"))
+		case <-out:
+			c.conn.Write([]byte("ok"))
 		}
 	}
 }
@@ -47,15 +47,15 @@ func (c *Client) Beat() {
 func (c *Client) Close() {
 	close(c.ch)
 	c.conn.Close()
-	log.Printf("Connection to %s closed",c.name)
+	log.Printf("Connection to %s closed", c.name)
 }
 
-func CreateClient(name string,addr net.Addr, time time.Duration) (c *Client) {
+func CreateClient(name string, addr string, time time.Duration) (c *Client) {
 	c.name = name
 	// do a dns lookup for the addr and grab connection net.Dial("tcp",addr)
-	conn, _ := net.Dial("tcp",addr)
+	conn, _ := net.Dial("tcp", addr)
 	c.conn = conn
-	c.ch = make chan string
+	c.ch = make(chan string)
 	c.timeout = time
 	return
 }
