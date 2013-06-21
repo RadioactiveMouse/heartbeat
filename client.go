@@ -32,13 +32,16 @@ func (c *Client) ChangeTimeout(t time.Duration) {
 }
 
 // send a heartbeat to the conn
-func (c *Client) Beat() {
+func (c *Client) Beat(expire time.Duration) {
 	defer c.Close()
+	ttl := time.After(expire)
 	out := time.Tick(c.timeout)
 	for {
 		select {
 		case <-out:
 			c.conn.Write([]byte("ok"))
+		case <-ttl:
+			break
 		}
 	}
 }
@@ -50,12 +53,13 @@ func (c *Client) Close() {
 	log.Printf("Connection to %s closed", c.name)
 }
 
-func CreateClient(name string, addr string, time time.Duration) (c *Client) {
+func CreateClient(name string, addr string, time time.Duration, expire time.Duration) (c *Client) {
 	c.name = name
 	// do a dns lookup for the addr and grab connection net.Dial("tcp",addr)
 	conn, _ := net.Dial("tcp", addr)
 	c.conn = conn
 	c.ch = make(chan string)
 	c.timeout = time
+	go c.Beat(expire) // launch beat in a seperate goroutine to start the reporting
 	return
 }
